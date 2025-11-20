@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* Default theme (dark) */
+    --custom-bg: #000000;
+    --custom-surface: #1c1c1e;
+    --custom-surface-hover: #2c2c2e;
+    --custom-primary: #0a84ff;
+    --custom-primary-hover: #0056cc;
+    --custom-secondary: #3a3a3c;
+    --custom-text-primary: #f5f5f7;
+    --custom-text-secondary: #8a8a8e;
+    --custom-text-tertiary: #636366;
+    --custom-border: #38383a;
+    --custom-border-light: #48484a;
+    --custom-success: #30d158;
+    --custom-warning: #ff9f0a;
+    --custom-danger: #ff453a;
+    --custom-danger-hover: #d70015;
+    --custom-shadow: rgba(0, 0, 0, 0.3);
+    --custom-shadow-light: rgba(0, 0, 0, 0.1);
+    --custom-sidebar: #ffffff;
+  }
+
+  :root.light {
+    /* Variabel untuk tema terang */
+    --custom-bg: #f2f2f7;
+    --custom-surface: #ffffff;
+    --custom-surface-hover: #f8f8f8;
+    --custom-primary: #007aff;
+    --custom-primary-hover: #0056cc;
+    --custom-secondary: #e5e5ea;
+    --custom-text-primary: #1c1c1e;
+    --custom-text-secondary: #636366;
+    --custom-text-tertiary: #8a8a8e;
+    --custom-border: #d1d1d6;
+    --custom-border-light: #c7c7cc;
+    --custom-success: #30d158;
+    --custom-warning: #ff9f0a;
+    --custom-danger: #ff453a;
+    --custom-danger-hover: #d70015;
+    --custom-shadow: rgba(0, 0, 0, 0.1);
+    --custom-shadow-light: rgba(0, 0, 0, 0.05);
+    --custom-sidebar: #000000;
+  }
+
+  * {
+    transition: background-color 0.2s ease, color 0.2s ease,
+      border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  body {
+    font-family: "Inter", sans-serif;
+    background-color: var(--custom-bg);
+    color: var(--custom-text-primary);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+  }
+
+  /* Utility classes untuk menggunakan CSS variables */
+  @theme {
+    /* Base colors */
+    --color-bg: var(--custom-bg);
+    --color-surface: var(--custom-surface);
+    --color-secondary: var(--custom-secondary);
+    --color-surface-hover: var(--custom-surface-hover);
+    --color-border: var(--custom-border);
+    --color-border-light: var(--custom-border-light);
+
+    /* Text colors */
+    --color-text-primary: var(--custom-text-primary);
+    --color-text-secondary: var(--custom-text-secondary);
+    --color-text-tertiary: var(--custom-text-tertiary);
+    --color-blue: var(--custom-primary);
+
+    /* Semantic colors */
+    --color-primary: var(--custom-primary);
+    --color-primary-hover: var(--custom-primary-hover);
+    --color-success: var(--custom-success);
+    --color-warning: var(--custom-warning);
+    --color-danger: var(--custom-danger);
+    --color-danger-hover: var(--custom-danger-hover);
+
+    /* Sidebar / surfaces */
+    --color-sidebar: var(--custom-sidebar);
+  }
+  .-shadow {
+    box-shadow: 0 4px 6px var(--custom-shadow);
+  }
+  .-shadow-light {
+    box-shadow: 0 2px 4px var(--custom-shadow-light);
+  }
+}

@@ -1,0 +1,19 @@
+# Robots.txt for Solivra Habit Tracker
+# Allow all search engine bots to crawl the site
+
+User-agent: *
+Allow: /
+Allow: /admin
+Disallow: /admin-panel
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /profile
+Disallow: /history
+Disallow: /stats
+
+# Specify sitemap
+Sitemap: https://solivra.kiizzki.my.id/sitemap.xml
+Sitemap: https://solivra.vercel.app/sitemap.xml
+
+# Crawl delay (optional)
+Crawl-delay: 1
