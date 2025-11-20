@@ -1,0 +1,46 @@
+# Binaries
+server_go
+main
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+# Build/test/output
+*.out
+*.profraw
+*.profdata
+*.test
+*.coverprofile
+*.tmp
+*.log
+*.cache/
+coverage/
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# Environment files
+.env
+.env.*
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+node_modules/
+.tools/
+pkg/mod/
+*.bak
