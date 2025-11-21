@@ -57,19 +57,24 @@ func main() {
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, X-Requested-With, X-Session-Token",
 	}))
 
-	app.Use(limiter.New(limiter.Config{
-		Max:        200,
-		Expiration: 1 * time.Minute,
-		KeyGenerator: func(c *fiber.Ctx) string {
-			return utils.GetClientIP(c)
-		},
-		LimitReached: func(c *fiber.Ctx) error {
-			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
-				"ok":  false,
-				"msg": "Too many requests, please try again later.",
-			})
-		},
-	}))
+	// Rate Limiting (can be disabled or configured via env vars)
+	if cfg.RateLimitMax > 0 {
+		app.Use(limiter.New(limiter.Config{
+			Max:        cfg.RateLimitMax,
+			Expiration: time.Duration(cfg.RateLimitExpiration) * time.Minute,
+			KeyGenerator: func(c *fiber.Ctx) string {
+				return utils.GetClientIP(c)
+			},
+			LimitReached: func(c *fiber.Ctx) error {
+				return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+					"ok":  false,
+					"msg": "Too many requests, please try again later.",
+				})
+			},
+		}))
+	} else {
+		log.Println("⚠️  Rate limiting is DISABLED (RATE_LIMIT_MAX=0)")
+	}
 
 	app.Use(middleware.ActivityLoggerMiddleware)
 

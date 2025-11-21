@@ -61,34 +61,39 @@ func Login(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, 400, "Username dan password wajib diisi")
 	}
 
-	// 1. Cek IP Lock (Brute Force Protection)
+	// 1. Cek IP Lock (Brute Force Protection) - Skip jika disabled untuk testing
+	cfg := config.Get()
 	loginAttemptsColl := database.GetCollection("loginattempts")
-	var activeIpLock models.LoginAttempt
-	err := loginAttemptsColl.FindOne(ctx, bson.M{
-		"ip_address":    ip,
-		"outcome":       "ip_locked",
-		"lockout_until": bson.M{"$gt": now},
-	}, options.FindOne().SetSort(bson.D{{Key: "attempt_time", Value: -1}})).Decode(&activeIpLock)
+	
+	if !cfg.DisableIPLockout {
+		var activeIpLock models.LoginAttempt
+		err := loginAttemptsColl.FindOne(ctx, bson.M{
+			"ip_address":    ip,
+			"outcome":       "ip_locked",
+			"lockout_until": bson.M{"$gt": now},
+		}, options.FindOne().SetSort(bson.D{{Key: "attempt_time", Value: -1}})).Decode(&activeIpLock)
 
-	if err == nil {
-		utils.LogActivity(c, "security_ip_lock", map[string]interface{}{
-			"lockout_until": activeIpLock.LockoutUntil,
-			"ip":            ip,
-		}, map[string]interface{}{"username": "guest"})
+		if err == nil {
+			utils.LogActivity(c, "security_ip_lock", map[string]interface{}{
+				"lockout_until": activeIpLock.LockoutUntil,
+				"ip":            ip,
+			}, map[string]interface{}{"username": "guest"})
 
-		return c.Status(429).JSON(fiber.Map{
-			"ok":  false,
-			"msg": "Form login sementara dinonaktifkan untuk IP ini. Coba lagi nanti.",
-			"lockout": fiber.Map{
-				"type":  "ip",
-				"until": activeIpLock.LockoutUntil,
-			},
-		})
+			return c.Status(429).JSON(fiber.Map{
+				"ok":  false,
+				"msg": "Form login sementara dinonaktifkan untuk IP ini. Coba lagi nanti.",
+				"lockout": fiber.Map{
+					"type":  "ip",
+					"until": activeIpLock.LockoutUntil,
+				},
+			})
+		}
 	}
 
 	// 2. Cari User di Database
 	usersColl := database.GetCollection("users")
 	var user models.User
+	var err error
 
 	err = usersColl.FindOne(ctx, bson.M{
 		"username": username, // Username sudah di-lowercase
@@ -105,38 +110,40 @@ func Login(c *fiber.Ctx) error {
 			AttemptTime: now,
 		})
 
-		// Cek apakah IP ini sering mencoba user acak (IP Lock Logic)
-		oneHourAgo := now.Add(-1 * time.Hour)
-		unknownAttempts, _ := loginAttemptsColl.CountDocuments(ctx, bson.M{
-			"ip_address":   ip,
-			"outcome":      "user_not_found",
-			"attempt_time": bson.M{"$gte": oneHourAgo},
-		})
-
-		if unknownAttempts >= 5 {
-			lockoutUntil := now.Add(1 * time.Hour)
-			loginAttemptsColl.InsertOne(ctx, models.LoginAttempt{
-				Username:     username,
-				IPAddress:    ip,
-				UserAgent:    userAgent,
-				Outcome:      "ip_locked",
-				LockoutUntil: &lockoutUntil,
-				AttemptTime:  now,
+		// Cek apakah IP ini sering mencoba user acak (IP Lock Logic) - Skip jika disabled
+		if !cfg.DisableIPLockout {
+			oneHourAgo := now.Add(-1 * time.Hour)
+			unknownAttempts, _ := loginAttemptsColl.CountDocuments(ctx, bson.M{
+				"ip_address":   ip,
+				"outcome":      "user_not_found",
+				"attempt_time": bson.M{"$gte": oneHourAgo},
 			})
 
-			utils.LogActivity(c, "security_ip_lock", map[string]interface{}{
-				"lockout_until": lockoutUntil,
-				"attempts":      unknownAttempts,
-			}, map[string]interface{}{"username": "guest"})
+			if unknownAttempts >= 5 {
+				lockoutUntil := now.Add(1 * time.Hour)
+				loginAttemptsColl.InsertOne(ctx, models.LoginAttempt{
+					Username:     username,
+					IPAddress:    ip,
+					UserAgent:    userAgent,
+					Outcome:      "ip_locked",
+					LockoutUntil: &lockoutUntil,
+					AttemptTime:  now,
+				})
 
-			return c.Status(429).JSON(fiber.Map{
-				"ok":  false,
-				"msg": "Form login dinonaktifkan selama 1 jam untuk IP ini.",
-				"lockout": fiber.Map{
-					"type":  "ip",
-					"until": lockoutUntil,
-				},
-			})
+				utils.LogActivity(c, "security_ip_lock", map[string]interface{}{
+					"lockout_until": lockoutUntil,
+					"attempts":      unknownAttempts,
+				}, map[string]interface{}{"username": "guest"})
+
+				return c.Status(429).JSON(fiber.Map{
+					"ok":  false,
+					"msg": "Form login dinonaktifkan selama 1 jam untuk IP ini.",
+					"lockout": fiber.Map{
+						"type":  "ip",
+						"until": lockoutUntil,
+					},
+				})
+			}
 		}
 
 		utils.LogActivity(c, "auth_login_failed", map[string]interface{}{

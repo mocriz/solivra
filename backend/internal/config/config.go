@@ -3,6 +3,7 @@ package config
 import (
 	"log"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -22,6 +23,9 @@ type Config struct {
 	CloudflareTurnstileKey    string
 	CloudflareTurnstileSecret string
 	AdminEmails               []string
+	DisableIPLockout          bool   // Disable IP lockout for testing/benchmark
+	RateLimitMax              int    // Max requests per minute (0 = disable, default: 200)
+	RateLimitExpiration       int    // Expiration in minutes (default: 1)
 }
 
 var appConfig *Config
@@ -50,6 +54,26 @@ func Load() *Config {
 		mongoURI = os.Getenv("MONGODB_URI") // backward compatibility with README lama
 	}
 
+	// Parse DISABLE_IP_LOCKOUT (default: false)
+	disableIPLockout := os.Getenv("DISABLE_IP_LOCKOUT")
+	disableIPLockoutBool := disableIPLockout == "true" || disableIPLockout == "1"
+
+	// Parse RATE_LIMIT_MAX (default: 200, 0 = disable)
+	rateLimitMax := 200
+	if envRateLimit := os.Getenv("RATE_LIMIT_MAX"); envRateLimit != "" {
+		if parsed, err := strconv.Atoi(envRateLimit); err == nil {
+			rateLimitMax = parsed
+		}
+	}
+
+	// Parse RATE_LIMIT_EXPIRATION in minutes (default: 1)
+	rateLimitExpiration := 1
+	if envExpiration := os.Getenv("RATE_LIMIT_EXPIRATION"); envExpiration != "" {
+		if parsed, err := strconv.Atoi(envExpiration); err == nil {
+			rateLimitExpiration = parsed
+		}
+	}
+
 	cfg := &Config{
 		Port:                      os.Getenv("PORT"),
 		MongoURI:                  mongoURI,
@@ -62,6 +86,9 @@ func Load() *Config {
 		CloudinaryAPISecret:       os.Getenv("CLOUDINARY_API_SECRET"),
 		CloudflareTurnstileKey:    os.Getenv("CLOUDFLARE_TURNSTILE_SITE_KEY"),
 		CloudflareTurnstileSecret: os.Getenv("CLOUDFLARE_TURNSTILE_SECRET_KEY"),
+		DisableIPLockout:          disableIPLockoutBool,
+		RateLimitMax:              rateLimitMax,
+		RateLimitExpiration:       rateLimitExpiration,
 	}
 
 	if cfg.Port == "" {
